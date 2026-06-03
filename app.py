@@ -48,8 +48,7 @@ def index():
         return render_template('index.html', tasks=tasks)
 
     except Exception as e:
-        logging.error(f'Error fetching tasks: {e}')
-        return 'Error loading tasks'
+        return f"Error: {str(e)}"
 
 
 @app.route('/add', methods=['POST'])
@@ -101,7 +100,7 @@ def update_task(id):
 
     return redirect('/')
 
-
-if __name__ == "__main__":
+with app.app_context():
     init_db()
+if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
