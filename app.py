@@ -100,6 +100,27 @@ def update_task(id):
 
     return redirect('/')
 
+@app.route('/delete/<int:id>', methods=['POST'])
+def delete_task(id):
+    try:
+        conn = sqlite3.connect('tasks.db')
+        cursor = conn.cursor()
+
+        cursor.execute(
+            "DELETE FROM tasks WHERE id=?",
+            (id,)
+        )
+
+        conn.commit()
+        conn.close()
+
+        logging.info(f'Task {id} deleted')
+
+    except Exception as e:
+        logging.error(f'Error deleting task: {e}')
+
+    return redirect('/')
+
 with app.app_context():
     init_db()
 if __name__ == "__main__":
