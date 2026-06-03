@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Task Manager</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 40px;
+        }
+        input, select {
+            padding: 8px;
+            margin: 5px;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ccc;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f4f4f4;
+        }
+        button {
+            padding: 6px 10px;
+        }
+    </style>
+</head>
+<body>
+
+<h2>📄 Sprint Task Manager</h2>
+
+<form action="/add" method="post">
+    <input type="text" name="assignee" placeholder="Assignee" required>
+    <input type="text" name="task" placeholder="Task" required>
+
+    <select name="status">
+        <option>Started</option>
+        <option>In Progress</option>
+        <option>Completed</option>
+        <option>Blocked</option>
+    </select>
+
+    <button type="submit">Add Task</button>
+</form>
+
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Assignee</th>
+        <th>Date</th>
+        <th>Task</th>
+        <th>Status</th>
+        <th>Update</th>
+    </tr>
+
+    {% for t in tasks %}
+    <tr>
+        <td>{{ t[0] }}</td>
+        <td>{{ t[1] }}</td>
+        <td>{{ t[2] }}</td>
+        <td>{{ t[3] }}</td>
+        <td>{{ t[4] }}</td>
+        <td>
+            <form action="/update/{{ t[0] }}" method="post">
+                <select name="status">
+                    <option>Started</option>
+                    <option>In Progress</option>
+                    <option>Completed</option>
+                    <option>Blocked</option>
+                </select>
+                <button type="submit">Update</button>
+            </form>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+</body>
+</html>
