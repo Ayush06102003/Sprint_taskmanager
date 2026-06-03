@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, redirect
 import sqlite3
 from datetime import datetime
 import logging
-
+from zoneinfo import ZoneInfo
 app = Flask(__name__)
 
 logging.basicConfig(
@@ -57,7 +57,9 @@ def add_task():
         assignee = request.form['assignee']
         task = request.form['task']
         status = request.form['status']
-        date = datetime.now().strftime('%Y-%m-%d')
+        date = datetime.now(
+            ZoneInfo("Asia/Kolkata")
+            ).strftime('%Y-%m-%d')
 
         conn = sqlite3.connect('tasks.db')
         cursor = conn.cursor()
