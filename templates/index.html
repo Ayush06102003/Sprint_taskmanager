@@ -1,140 +1,284 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-    <title>Task Manager</title>
+    <title>Sprint Task Manager</title>
+
     <style>
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial;
-            margin: 40px;
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f6f9;
         }
 
-        input, select {
+        h2 {
+            color: #333;
+        }
+
+        form {
+            margin-bottom: 10px;
+        }
+
+        input,
+        select {
             padding: 8px;
-            margin: 5px;
-        }
-
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin-top: 20px;
-        }
-
-        th, td {
+            margin: 4px;
             border: 1px solid #ccc;
-            padding: 10px;
-            text-align: left;
-        }
-
-        th {
-            background-color: #f4f4f4;
+            border-radius: 5px;
         }
 
         button {
-            padding: 6px 10px;
-            cursor: pointer;
-        }
-
-        .delete-btn {
-            background-color: #dc3545;
-            color: white;
+            padding: 8px 14px;
             border: none;
-            border-radius: 4px;
+            border-radius: 5px;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
         }
 
-        .delete-btn:hover {
-            background-color: #c82333;
+        .add-btn {
+            background-color: #28a745;
+        }
+
+        .add-btn:hover {
+            background-color: #218838;
         }
 
         .update-btn {
             background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
         }
 
         .update-btn:hover {
             background-color: #0056b3;
         }
 
-        .add-btn {
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
+        .reset-btn {
+            background-color: #6c757d;
         }
 
-        .add-btn:hover {
-            background-color: #218838;
+        .reset-btn:hover {
+            background-color: #545b62;
+        }
+
+        .delete-btn {
+            background-color: #dc3545;
+        }
+
+        .delete-btn:hover {
+            background-color: #b02a37;
+        }
+
+        .filter-btn {
+            background-color: #6f42c1;
+        }
+
+        .filter-btn:hover {
+            background-color: #563d7c;
+        }
+
+        .table-container {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            min-width: 1200px;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        th {
+            background-color: #343a40;
+            color: white;
+            padding: 12px;
+        }
+
+        td {
+            padding: 10px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f8f9fa;
+        }
+
+        tr:hover {
+            background-color: #eef4ff;
+        }
+
+        .action-form {
+            margin-bottom: 5px;
+        }
+
+        @media screen and (max-width: 768px) {
+
+            body {
+                margin: 10px;
+            }
+
+            input,
+            select,
+            button {
+                width: 100%;
+                margin-bottom: 8px;
+            }
         }
     </style>
 </head>
+
 <body>
 
-<h2>📄 Sprint Task Manager</h2>
+    <h2>📄 Sprint Task Manager</h2>
 
-<form action="/add" method="post">
-    <input type="text" name="assignee" placeholder="Assignee" required>
-    <input type="text" name="task" placeholder="Task" required>
+    <!-- FILTER -->
 
-    <select name="status">
-        <option>Not Started</option>
-        <option>Started</option>
-        <option>In Progress</option>
-        <option>Completed</option>
-        <option>Blocked</option>
-    </select>
+    <form method="get">
 
-    <button type="submit" class="add-btn">Add Task</button>
-</form>
+        <input type="text" name="assignee" placeholder="Filter Assignee">
 
-<table>
-    <tr>
-        <th>ID</th>
-        <th>Assignee</th>
-        <th>Date</th>
-        <th>Task</th>
-        <th>Status</th>
-        <th>Update</th>
-        <th>Delete</th>
-    </tr>
+        <select name="status">
+            <option value="">All Status</option>
+            <option>Not Started</option>
+            <option>Started</option>
+            <option>In Progress</option>
+            <option>Completed</option>
+            <option>Blocked</option>
+        </select>
 
-    {% for t in tasks %}
-    <tr>
-        <td>{{ t[0] }}</td>
-        <td>{{ t[1] }}</td>
-        <td>{{ t[2] }}</td>
-        <td>{{ t[3] }}</td>
-        <td>{{ t[4] }}</td>
+        <input type="text" name="sprint" placeholder="Filter Sprint">
 
-        <td>
-            <form action="/update/{{ t[0] }}" method="post">
-                <select name="status">
-                    <option>Not Started</option>
-                    <option>Started</option>
-                    <option>In Progress</option>
-                    <option>Completed</option>
-                    <option>Blocked</option>
-                </select>
+        <button type="submit" class="filter-btn">
+            Filter
+        </button>
 
-                <button type="submit" class="update-btn">
-                    Update
-                </button>
-            </form>
-        </td>
+        <button type="button" class="reset-btn" onclick="window.location.href='/'">
+            Reset
+        </button>
 
-        <td>
-            <form action="/delete/{{ t[0] }}" method="post">
-                <button
-                    type="submit"
-                    class="delete-btn"
-                    onclick="return confirm('Are you sure you want to delete this task?');">
-                    Delete
-                </button>
-            </form>
-        </td>
-    </tr>
-    {% endfor %}
-</table>
+    </form>
+
+    <hr>
+
+    <!-- ADD FORM -->
+
+    <form action="/add" method="post">
+
+        <input name="assignee" placeholder="Assignee" required>
+
+        <input name="sprint" placeholder="Sprint" required>
+
+        <input name="epic" placeholder="Epic" required>
+
+        <input name="task" placeholder="Task" required>
+
+        <select name="status">
+            <option selected>Not Started</option>
+            <option>Started</option>
+            <option>In Progress</option>
+            <option>Completed</option>
+            <option>Blocked</option>
+        </select>
+
+        <input type="number" name="effort" placeholder="Effort (hrs)" required>
+
+        <input type="number" name="hours_spent" value="0" min="0" required>
+
+        <input name="comment" placeholder="Comment (optional)">
+
+        <button type="submit" class="add-btn">
+            Add
+        </button>
+
+    </form>
+
+    <hr>
+
+    <div class="table-container">
+
+        <table>
+
+            <tr>
+                <th>ID</th>
+                <th>Sprint</th>
+                <th>Assignee</th>
+                <th>Epic</th>
+                <th>Task</th>
+                <th>Status</th>
+                <th>Effort</th>
+                <th>Spent</th>
+                <th>Remaining</th>
+                <th>Comment</th>
+                <th>Action</th>
+            </tr>
+
+            {% for t in tasks %}
+            <tr>
+
+                <td>{{ t[0] }}</td>
+                <td>{{ t[3] }}</td>
+                <td>{{ t[1] }}</td>
+                <td>{{ t[4] }}</td>
+                <td>{{ t[5] }}</td>
+                <td>{{ t[6] }}</td>
+                <td>{{ t[7] }}</td>
+                <td>{{ t[8] }}</td>
+                <td>{{ t[9] }}</td>
+                <td>{{ t[10] }}</td>
+
+                <td>
+
+                    <!-- UPDATE -->
+
+                    <form action="/update/{{ t[0] }}" method="post" class="action-form">
+
+                        <select name="status">
+                            <option>Not Started</option>
+                            <option>Started</option>
+                            <option>In Progress</option>
+                            <option>Completed</option>
+                            <option>Blocked</option>
+                        </select>
+
+                        <input type="number" name="hours_spent" value="{{ t[8] }}" min="0">
+
+                        <input name="comment" placeholder="Comment">
+
+                        <button type="submit" class="update-btn">
+                            Update
+                        </button>
+
+                    </form>
+
+                    <!-- DELETE -->
+
+                    <form action="/delete/{{ t[0] }}" method="post">
+
+                        <button type="submit" class="delete-btn" onclick="return confirm('Delete this task?')">
+                            Delete
+                        </button>
+
+                    </form>
+
+                </td>
+
+            </tr>
+            {% endfor %}
+
+        </table>
+
+    </div>
 
 </body>
+
 </html>
