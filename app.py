@@ -1,7 +1,12 @@
 from flask import Flask, render_template, request, redirect
-import sqlite3
+import psycopg2
+import os
 from datetime import datetime
+from zoneinfo import ZoneInfo
+from dotenv import load_dotenv
 import logging
+
+load_dotenv()
 
 app = Flask(__name__)
 
@@ -13,16 +18,23 @@ logging.basicConfig(
     format='%(asctime)s - %(levelname)s - %(message)s'
 )
 
+# ---------------- DB CONNECTION ----------------
+
+def get_connection():
+    return psycopg2.connect(
+        os.getenv("DATABASE_URL")
+    )
+
 # ---------------- DB INIT ----------------
 
 def init_db():
     try:
-        conn = sqlite3.connect('tasks.db')
+        conn = get_connection()
         cursor = conn.cursor()
 
         cursor.execute("""
             CREATE TABLE IF NOT EXISTS tasks (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id SERIAL PRIMARY KEY,
                 assignee TEXT,
                 date TEXT,
                 sprint TEXT,
@@ -37,13 +49,13 @@ def init_db():
         """)
 
         conn.commit()
+        cursor.close()
         conn.close()
 
         logging.info("Database initialized")
 
     except Exception as e:
         logging.error(f"DB Init Error: {e}")
-
 
 # ---------------- HOME WITH FILTER ----------------
 
@@ -53,35 +65,41 @@ def index():
         assignee_filter = request.args.get('assignee')
         status_filter = request.args.get('status')
         sprint_filter = request.args.get('sprint')
-        conn = sqlite3.connect('tasks.db')
+
+        conn = get_connection()
         cursor = conn.cursor()
 
         query = "SELECT * FROM tasks WHERE 1=1"
         params = []
 
         if assignee_filter:
-            query += " AND assignee=?"
+            query += " AND assignee=%s"
             params.append(assignee_filter)
 
         if status_filter:
-            query += " AND status=?"
+            query += " AND status=%s"
             params.append(status_filter)
 
         if sprint_filter:
-            query += " AND sprint=?"
+            query += " AND sprint=%s"
             params.append(sprint_filter)
+
+        query += " ORDER BY id DESC"
 
         cursor.execute(query, params)
         tasks = cursor.fetchall()
 
+        cursor.close()
         conn.close()
 
-        return render_template('index.html', tasks=tasks)
+        return render_template(
+            'index.html',
+            tasks=tasks
+        )
 
     except Exception as e:
         logging.error(f"Error fetching tasks: {e}")
-        return "Error loading tasks"
-
+        return f"Error loading tasks: {e}"
 
 # ---------------- ADD ----------------
 
@@ -106,16 +124,29 @@ def add_task():
         if status == "Completed" and remaining > 0:
             return "❌ Cannot mark complete unless remaining = 0"
 
-        conn = sqlite3.connect('tasks.db')
+        conn = get_connection()
         cursor = conn.cursor()
 
         cursor.execute("""
             INSERT INTO tasks
-            (assignee, date, sprint, epic, task, status, effort, hours_spent, remaining, comment)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (
+                assignee,
+                date,
+                sprint,
+                epic,
+                task,
+                status,
+                effort,
+                hours_spent,
+                remaining,
+                comment
+            )
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
         """, (
             assignee,
-            datetime.now().strftime("%Y-%m-%d"),
+            datetime.now(
+                ZoneInfo("Asia/Kolkata")
+            ).strftime("%Y-%m-%d"),
             sprint,
             epic,
             task,
@@ -127,6 +158,8 @@ def add_task():
         ))
 
         conn.commit()
+
+        cursor.close()
         conn.close()
 
         logging.info(f"Task added for {assignee}")
@@ -135,7 +168,6 @@ def add_task():
         logging.error(f"Error adding task: {e}")
 
     return redirect('/')
-
 
 # ---------------- UPDATE ----------------
 
@@ -146,15 +178,20 @@ def update_task(id):
         hours_spent = int(request.form['hours_spent'])
         comment = request.form.get('comment', '')
 
-        conn = sqlite3.connect('tasks.db')
+        conn = get_connection()
         cursor = conn.cursor()
 
         cursor.execute(
-            "SELECT effort FROM tasks WHERE id=?",
+            "SELECT effort FROM tasks WHERE id=%s",
             (id,)
         )
 
-        effort = cursor.fetchone()[0]
+        result = cursor.fetchone()
+
+        if not result:
+            return "Task not found"
+
+        effort = result[0]
 
         remaining = effort - hours_spent
 
@@ -163,11 +200,11 @@ def update_task(id):
 
         cursor.execute("""
             UPDATE tasks
-            SET status=?,
-                hours_spent=?,
-                remaining=?,
-                comment=?
-            WHERE id=?
+            SET status=%s,
+                hours_spent=%s,
+                remaining=%s,
+                comment=%s
+            WHERE id=%s
         """, (
             status,
             hours_spent,
@@ -177,6 +214,8 @@ def update_task(id):
         ))
 
         conn.commit()
+
+        cursor.close()
         conn.close()
 
         logging.info(f"Task {id} updated")
@@ -186,21 +225,22 @@ def update_task(id):
 
     return redirect('/')
 
-
 # ---------------- DELETE ----------------
 
 @app.route('/delete/<int:id>', methods=['POST'])
 def delete_task(id):
     try:
-        conn = sqlite3.connect('tasks.db')
+        conn = get_connection()
         cursor = conn.cursor()
 
         cursor.execute(
-            "DELETE FROM tasks WHERE id=?",
+            "DELETE FROM tasks WHERE id=%s",
             (id,)
         )
 
         conn.commit()
+
+        cursor.close()
         conn.close()
 
         logging.info(f"Task {id} deleted")
@@ -210,11 +250,8 @@ def delete_task(id):
 
     return redirect('/')
 
-import os
+# ---------------- STARTUP ----------------
 
-if os.path.exists("tasks.db"):
-    os.remove("tasks.db")
-    
 with app.app_context():
     init_db()
 
