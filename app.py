@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect,send_file
+from openpyxl import Workbook
 import psycopg2
 import os
 from datetime import datetime
@@ -100,6 +101,66 @@ def index():
     except Exception as e:
         logging.error(f"Error fetching tasks: {e}")
         return f"Error loading tasks: {e}"
+
+# ----------------Export to excel--------
+
+@app.route('/export_excel')
+def export_excel():
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("""
+        SELECT id,
+               sprint,
+               assignee,
+               epic,
+               task,
+               status,
+               effort,
+               hours_spent,
+               remaining,
+               comment,
+               date
+        FROM tasks
+        ORDER BY id DESC
+    """)
+
+    rows = cursor.fetchall()
+
+    wb = Workbook()
+    ws = wb.active
+
+    ws.title = "Sprint Tasks"
+
+    ws.append([
+        "Id"
+        "Sprint",
+        "Assignee",
+        "Epic",
+        "Task",
+        "Status",
+        "Effort",
+        "Hours Spent",
+        "Remaining",
+        "Comment",
+        "Date"
+    ])
+
+    for row in rows:
+        ws.append(row)
+
+    filename = "Sprint_Tasks.xlsx"
+
+    wb.save(filename)
+
+    cursor.close()
+    conn.close()
+
+    return send_file(
+        filename,
+        as_attachment=True
+    )
 
 # ---------------- ADD ----------------
 
